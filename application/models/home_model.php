@@ -187,34 +187,36 @@ class Home_model extends CI_Model {
 			$puzzleID = $_POST['puzzleID'];
 			$gametype = $_POST['gametype'];
 			$gameID = $_POST['gameID']; */
-			echo 'hello';
 			$pq = $this->db->query("CALL usp_getUserGameStatus('SESSIONID','$gameID','$puzzleID','','$userID','')")->row();
 			mysqli_next_result($this->db->conn_id);
 			if($pq){
+				
 				if($gametype == 'PROGRAME'){
 					$tq = $this->db->query("CALL usp_getUserGameStatus('STOTAL_PROG_TIME','$gameID','$puzzleID','','$userID','')")->row();
+					mysqli_next_result($this->db->conn_id);
 				}
 				else{
-				$tq = $this->db->query("CALL usp_getUserGameStatus('STOTAL','$gameID','$puzzleID','','$userID','')")->row();
+					$tq = $this->db->query("CALL usp_getUserGameStatus('STOTAL','$gameID','$puzzleID','','$userID','')")->row();
+					mysqli_next_result($this->db->conn_id);
 				}
-				mysqli_next_result($this->db->conn_id);
 				$time=0;
 				if($tq)$time = $tq->time;
 				$startedTime = $pq->startedTime;
 				$now = $this->db->query("SELECT NOW() as now")->row();
 				$timeLeft = strtotime($startedTime)+ $time - strtotime($now->now);
-				if($timeLeft > 0)return $pq->gameSessionID;
+				if($timeLeft > 0){echo $pq->gameSessionID; return $pq->gameSessionID;}
 			}
+			
 			$gameSessionID = uniqid();
 			$vsessionID = $this->randStrGen(5);
 			$vresult = $this->randStrGen(5);
-			echo 'hi';
-			echo $vsessionID.'----'.$vresult;
+			
 			//$this->db->query("INSERT INTO tbl_userGameStatus (gameSessionID,userID, gameID, puzzleID, points, answeredQuestions, startedTime, datetime, status) VALUES ('$gameSessionID','$userID', '$gameID', '$puzzleID', 0, 1, NOW(), NOW(), 'started')");
 			$this->db->query("CALL usp_insUpdUserGameStatus('I','','$gameID','$puzzleID','0','$userID','',@".$vsessionID.",@".$vresult.")");
 			$query=$this->db->query("SELECT @".$vsessionID." as sessionID,@".$vresult." as status")->row();
 			//mysqli_next_result($this->db->conn_id);
 			echo $query->sessionID;
+		
 		}
 	function getUserGameStatus($gameSessionID, $gameID, $puzzleID, $gametype,$userID,$entityID){
 			/*$gametype = $_POST['gametype'];
