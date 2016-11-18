@@ -72,12 +72,12 @@ class Home extends CI_Controller {
 	// function getGameSessionID($userID,$puzzleID,$gametype,$gameID){
 		// $this->home_model->getGameSessionID($userID,$puzzleID,$gametype,$gameID);
 	// }
-	function getGameSessionID($userID,$puzzleID,$gametype,$gameID){
-		$this->home_model->getGameSessionID($userID,$puzzleID,$gametype,$gameID);
+	function getGameSessionID(){
+		$this->home_model->getGameSessionID();
 	}
 	
-	function getUserGameStatus($gameSessionID, $gameID, $puzzleID, $gametype='',$userID,$entityID){
-		$this->home_model->getUserGameStatus($gameSessionID, $gameID, $puzzleID, $gametype,$userID,$entityID);
+	function getUserGameStatus(){
+		$this->home_model->getUserGameStatus();
 	}
 	
 	/**

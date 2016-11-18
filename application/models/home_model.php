@@ -182,11 +182,11 @@ class Home_model extends CI_Model {
 			echo "Error";
 		}
 	}
-	function getGameSessionID($userID,$puzzleID,$gametype,$gameID){
-			/*$userID = $_POST['userID'];
+	function getGameSessionID(){
+			$userID = $_POST['userID'];
 			$puzzleID = $_POST['puzzleID'];
 			$gametype = $_POST['gametype'];
-			$gameID = $_POST['gameID']; */
+			$gameID = $_POST['gameID']; 
 			$pq = $this->db->query("CALL usp_getUserGameStatus('SESSIONID','$gameID','$puzzleID','','$userID','')")->row();
 			mysqli_next_result($this->db->conn_id);
 			if($pq){
@@ -218,13 +218,13 @@ class Home_model extends CI_Model {
 			echo $query->sessionID;
 		
 		}
-	function getUserGameStatus($gameSessionID, $gameID, $puzzleID, $gametype,$userID,$entityID){
-			/*$gametype = $_POST['gametype'];
+	function getUserGameStatus(){
+			$gametype = $_POST['gametype'];
 			$puzzleID = $_POST['puzzleID'];
 			$gameID = $_POST['gameID'];
 			$gameSessionID = $_POST['gameSessionID'];
 			$userID = $_POST['userID'];
-			$entityID = $_POST['entityID'];*/
+			$entityID = $_POST['entityID'];
 			//$userID = $this->session->userdata('userID');
 			$data2 = array();
 			$time= 0;$points = 0;$timeLeft = 0;$pendingQuestions = 0;$totalQuestions = 0;$mode = '';$randomQuestion=0;
@@ -294,7 +294,9 @@ class Home_model extends CI_Model {
 					$data2['question'] = $this->getQuestion($gameID,$puzzleID,$levelID,$gameSessionID,$randomQuestion,'single',$userID,$entityID);
 				}
 			}
-			var_dump($data2);
+			//die(implode("->",$data2));
+			echo json_encode($data2);
+			//var_dump($data2);
 		}	
 		function getQuestion($gameID,$puzzleID,$levelID,$challengeID,$randomQuestion,$mode,$userID,$entityID){
 			$question = array();$options = array();$data1 = array();
