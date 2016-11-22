@@ -88,5 +88,9 @@ class Home extends CI_Controller {
 	function getPredefinedLevels(){
 		$this->home_model->getPredefinedLevels();
 	}
+	
+	function insUpdUserGameQuestion(){
+		echo json_encode($this->home_model->insUpdUserGameQuestion());
+	}
 }
 ?>
