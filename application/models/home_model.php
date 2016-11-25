@@ -396,7 +396,7 @@ class Home_model extends CI_Model {
 		if(count($answers) == 0 || empty($answers))
 			$answer = 'skip';
 		else{
-			//$options = implode(",",$this->input->post('answer'));
+			//$options = implode(",",$this->input->post('answers'));
 			$correct = 0;$temp = 0;
 			$oq = $this->db->query("SELECT correctOption AS correctAnswer,optionID FROM tbl_evalOptions WHERE evalQuestionID = '".$questionID."'")->result();
 			foreach($oq as $o){
