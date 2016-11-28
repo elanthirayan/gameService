@@ -42,15 +42,6 @@ class Home_model extends CI_Model {
 			echo "False";
 		}
 	}
-	/**
-	TO Get Questions
-	Parameter : 
-	Return : 
-	
-	**/
-	function getQuestions(){
-		
-	}
 	
 	/**
 	TO Get Top Three Users and Scores for particular Game
@@ -273,14 +264,15 @@ class Home_model extends CI_Model {
 		$data2['pendingQuestions'] = $pendingQuestions;
 		$data2['correctQuestions'] = 0;
 		$data2['totalQuestions'] = $totalQuestions;
-		if($pendingQuestions == 0 || $timeLeft <= 0){
-			if($gametype == 'PROGRAME'){
+		if($gametype == 'PROGRAME'){
 			$data2['correctQuestions'] = $this->db->query("CALL usp_getUserGameStatus('CORRECT_PROG','$gameID','$puzzleID','','$userID','$gameSessionID')")->num_rows();
-			}else{
+		}else{
 			$data2['correctQuestions'] = $this->db->query("CALL usp_getUserGameStatus('CORRECT','$gameID','$puzzleID','','$userID','$gameSessionID')")->num_rows();
-			}
+		}
+		
+		mysqli_next_result($this->db->conn_id);
+		if($pendingQuestions == 0 || $timeLeft <= 0){
 			
-			mysqli_next_result($this->db->conn_id);
 			//$this->db->query("UPDATE tbl_userGameStatus SET status ='completed'  WHERE gameID = '$gameID' AND puzzleID = '$puzzleID' AND userID = '$userID' AND gameSessionID = '$gameSessionID'");
 			
 			$this->db->query("CALL usp_insUpdUserGameStatus('US','$gameSessionID','$gameID','$puzzleID','0','$userID','completed',@sessionID,@result)");
@@ -350,7 +342,7 @@ class Home_model extends CI_Model {
 	function getPredefinedLevels(){
 		$gameID=$_POST['gameID'];
 		//$gameID='a9288df7-9cdd-11e6-972d-0401a55da801';
-		$getPredefinedLevels=$this->db->query("SELECT gspwr.gameID, gspwr.gameLevelID, gspwr.rulePoints, gspwr.maxPoints, glp.levelName FROM tbl_gameSinglePlayerWinningRule gspwr INNER JOIN tbl_gameLevelsPredefined glp ON gspwr.gameLevelID = glp.levelID WHERE gspwr.gameID='".$gameID."' ORDER BY glp.levelOrder DESC;")->result_array();
+		$getPredefinedLevels=$this->db->query("SELECT gspwr.gameID, gspwr.gameLevelID, gspwr.rulePoints, gspwr.maxPoints, glp.levelName FROM tbl_gameSinglePlayerWinningRule gspwr INNER JOIN tbl_gameLevelsPredefined glp ON gspwr.gameLevelID = glp.levelID WHERE gspwr.gameID='".$gameID."' ORDER BY glp.levelOrder ASC")->result_array();
 		if(count($getPredefinedLevels)>0){
 			$data='';
 			foreach($getPredefinedLevels as $levels){
@@ -517,14 +509,14 @@ class Home_model extends CI_Model {
 		$data2['pendingQuestions'] = $pendingQuestions;
 		$data2['correctQuestions'] = 0;
 		$data2['totalQuestions'] = $totalQuestions;
-		if($pendingQuestions == 0 || $timeLeft <= 0){
-			if($gametype == 'PROGRAME'){
+		if($gametype == 'PROGRAME'){
 			$data2['correctQuestions'] = $this->db->query("CALL usp_getUserGameStatus('CORRECT_PROG','$gameID','$puzzleID','','$userID','$gameSessionID')")->num_rows();
-			}else{
+		}else{
 			$data2['correctQuestions'] = $this->db->query("CALL usp_getUserGameStatus('CORRECT','$gameID','$puzzleID','','$userID','$gameSessionID')")->num_rows();
-			}
+		}
+		mysqli_next_result($this->db->conn_id);
+		if($pendingQuestions == 0 || $timeLeft <= 0){
 			
-			mysqli_next_result($this->db->conn_id);
 			//$this->db->query("UPDATE tbl_userGameStatus SET status ='completed'  WHERE gameID = '$gameID' AND puzzleID = '$puzzleID' AND userID = '$userID' AND gameSessionID = '$gameSessionID'");
 			
 			$this->db->query("CALL usp_insUpdUserGameStatus('US','$gameSessionID','$gameID','$puzzleID','0','$userID','completed',@sessionID,@result)");
