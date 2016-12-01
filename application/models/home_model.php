@@ -178,6 +178,13 @@ class Home_model extends CI_Model {
 		$puzzleID = $_POST['puzzleID'];
 		$gametype = $_POST['gametype'];
 		$gameID = $_POST['gameID']; 
+		$noOfLives = 0;
+		
+		if($gametype == 'GPUZZLE'){
+			$cq = $this->db->query("CALL usp_getUserGameStatus('STOTAL_GPUZZLE','$gameID','$puzzleID','','$userID','')")->row();
+			mysqli_next_result($this->db->conn_id);
+			$noOfLives = $cq->secondTieQuestions;
+		}
 		$pq = $this->db->query("CALL usp_getUserGameStatus('SESSIONID','$gameID','$puzzleID','','$userID','')")->row();
 		mysqli_next_result($this->db->conn_id);
 		if($pq){
@@ -195,9 +202,8 @@ class Home_model extends CI_Model {
 			$startedTime = $pq->startedTime;
 			$now = $this->db->query("SELECT NOW() as now")->row();
 			$timeLeft = strtotime($startedTime)+ $time - strtotime($now->now);
-			if($timeLeft > 0){echo $pq->gameSessionID; return $pq->gameSessionID;}
+			if($timeLeft > 0){echo $pq->gameSessionID."|".$noOfLives; return $pq->gameSessionID;}
 		}
-		
 		$gameSessionID = uniqid();
 		$vsessionID = $this->randStrGen(5);
 		$vresult = $this->randStrGen(5);
@@ -206,16 +212,17 @@ class Home_model extends CI_Model {
 		$this->db->query("CALL usp_insUpdUserGameStatus('I','','$gameID','$puzzleID','0','$userID','',@".$vsessionID.",@".$vresult.")");
 		$query=$this->db->query("SELECT @".$vsessionID." as sessionID,@".$vresult." as status")->row();
 		//mysqli_next_result($this->db->conn_id);
-		echo $query->sessionID;
-	
+		echo $query->sessionID."|".$noOfLives;
+		
 	}
 	function getUserGameStatus(){
-		$gametype = $_POST['gametype'];
+		$gametype = $_POST['gameType'];
 		$puzzleID = $_POST['puzzleID'];
 		$gameID = $_POST['gameID'];
 		$gameSessionID = $_POST['gameSessionID'];
 		$userID = $_POST['userID'];
 		$entityID = $_POST['entityID'];
+		$attemptID = '';
 		if(isset($_POST['qTime'])){
 			$time_taken = $_POST['qTime'];
 		}
@@ -224,7 +231,7 @@ class Home_model extends CI_Model {
 		}
 		//$userID = $this->session->userdata('userID');
 		$data2 = array();
-		$time= 0;$points = 0;$timeLeft = 0;$pendingQuestions = 0;$totalQuestions = 0;$mode = '';$randomQuestion=0;
+		$time= 0;$points = 0;$timeLeft = 0;$pendingQuestions = 0;$totalQuestions = 0;$mode = '';$randomQuestion=0; $startedTime=0;
 		$levelID = '';
 		if($gametype == 'PROGRAME'){
 			$tq = $this->db->query("CALL usp_getUserGameStatus('STOTAL_PROG','$gameID','$puzzleID','','$userID','')")->row();
@@ -247,41 +254,63 @@ class Home_model extends CI_Model {
 		if($gametype == 'PROGRAME'){
 			$pq = $this->db->query("CALL usp_getUserGameStatus('SPOINTS_PROG','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
 		}
-		else{
-		$pq = $this->db->query("CALL usp_getUserGameStatus('SPOINTS','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
-		}mysqli_next_result($this->db->conn_id);
+		if($gametype == 'QUIZ'){
+			$pq = $this->db->query("CALL usp_getUserGameStatus('SPOINTS','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
+		}
+		if($gametype == 'GPUZZLE'){
+			$pq = $this->db->query("CALL usp_getUserGameStatus('SPOINTS_GPUZZLE','$gameID','$puzzleID','$attemptID','$userID','$gameSessionID')")->row();
+		}
+		mysqli_next_result($this->db->conn_id);
+		if($gametype=='GPUZZLE'){
+			$timeLeft = $time;
+		}
+		//var_dump($pq);
 		if($pq){
-			$points = $pq->points;
-			$startedTime = $pq->startedTime;
-			$now = $this->db->query("SELECT NOW() as now")->row();
-			$timeLeft = strtotime($startedTime)+ $time - strtotime($now->now);
-			if($gametype=='GPUZZLE'){
-				$timeLeft = $time - $time_taken;
+			if($pq->points != null){
+				$points = $pq->points;
+				$startedTime = $pq->startedTime;
+				$now = $this->db->query("SELECT NOW() as now")->row();
+				$timeLeft = strtotime($startedTime)+ $time - strtotime($now->now);
+				if($gametype=='GPUZZLE'){
+					$timeLeft = $time - ($startedTime+$time_taken);
+				}
 			}
 		}
 		
 		if($gametype == 'PROGRAME'){
-		$cq = $this->db->query("CALL usp_getUserGameStatus('PENDING_PROG','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
-		}else{
-		$cq = $this->db->query("CALL usp_getUserGameStatus('PENDING','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
+			$cq = $this->db->query("CALL usp_getUserGameStatus('PENDING_PROG','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
 		}
-		
+		if($gametype == 'QUIZ'){
+			$cq = $this->db->query("CALL usp_getUserGameStatus('PENDING','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
+		}
+		if($gametype == 'GPUZZLE'){
+			$cq = $this->db->query("CALL usp_getUserGameStatus('PENDING_GPUZZLE','$gameID','$puzzleID','$attemptID','$userID','$gameSessionID')")->row();
+		}
 		mysqli_next_result($this->db->conn_id);
+		
 		if($cq)$pendingQuestions = $totalQuestions - $cq->count;
 		
 		$data2['time'] = $timeLeft;
 		$data2['st'] = $startedTime;
 		$data2['bal_time'] = $time;
-		$data2['now'] = $now->now;
+		//$data2['now'] = $now->now;
 		$data2['points'] = $points;
 		$data2['pendingQuestions'] = $pendingQuestions;
 		$data2['correctQuestions'] = 0;
 		$data2['totalQuestions'] = $totalQuestions;
 		$data2['gameType'] = $gametype;
+		if($gametype == 'GPUZZLE'){
+			$uniqueID = $this->db->query("SELECT UUID() AS uniqueID")->row();
+			$data2['attemptID'] = $uniqueID->uniqueID;
+		}
 		if($gametype == 'PROGRAME'){
 			$data2['correctQuestions'] = $this->db->query("CALL usp_getUserGameStatus('CORRECT_PROG','$gameID','$puzzleID','','$userID','$gameSessionID')")->num_rows();
-		}else{
+		}
+		if($gametype == 'QUIZ'){
 			$data2['correctQuestions'] = $this->db->query("CALL usp_getUserGameStatus('CORRECT','$gameID','$puzzleID','','$userID','$gameSessionID')")->num_rows();
+		}
+		if($gametype == 'GPUZZLE'){
+			$data2['correctQuestions'] = $this->db->query("CALL usp_getUserGameStatus('CORRECT_GPUZZLE','$gameID','$puzzleID','$attemptID','$userID','$gameSessionID')")->num_rows();
 		}
 		
 		mysqli_next_result($this->db->conn_id);
@@ -343,6 +372,7 @@ class Home_model extends CI_Model {
 				$options[$i++]['questionID'] = $o->questionID;
 			}
 		}
+		//var_dump($qp);
 		$data1['question'] = $question;
 		$data1['options'] = $options;
 		return $data1;
@@ -388,6 +418,7 @@ class Home_model extends CI_Model {
 		$answer = $this->input->post('answer');
 		$entityID = $this->input->post('entityID');
 		$gameType = $this->input->post('gameType');
+		$attemptID = $this->input->post('attemptID');
 		// $r= "userID : ".$userID." GameSessionID : ".$gameSessionID." GameID :".$gameID." PuzzleID:".$puzzleID." QuestionID : ".$questionID." AnswerID : ".$answer." EntityID : ".$entityID;
 		// echo $r;
 		// exit();
@@ -417,7 +448,7 @@ class Home_model extends CI_Model {
 			if($tq){
 				if($correct == $temp){
 					$answer = 'correct';$totalPoints = 0;$maxPoints = 0;
-					$tq1 = $this->db->query("SELECT sum(q.points) as points,q.puzzleID,s.maxPoints From tbl_userGameQuestionStatus q INNER JOIN tbl_gamePuzzleDetails_published p ON p.puzzleID = q.puzzleID  INNER JOIN tbl_gameSinglePlayerWinningRule_published s ON s.gameLevelID = p.puzzleLevelID AND s.playerMode = p.singlePlayerMode WHERE q.gameMode = 'single' AND s.gameID = '$gameID' AND q.gameID = '$gameID' AND q.puzzleID = '$puzzleID' AND q.userID = '$userID' group by q.puzzleID")->row();
+					$tq1 = $this->db->query("SELECT sum(q.points) as points,q.puzzleID,s.maxPoints From tbl_userGameQuestionStatus q INNER JOIN tbl_gamePuzzleDetails_published p ON p.puzzleID = q.puzzleID  INNER JOIN tbl_gameSinglePlayerWinningRule_published s ON s.gameLevelID = p.puzzleLevelID AND s.playerMode = p.singlePlayerMode WHERE q.gameMode = 'single' AND s.gameID = '$gameID' AND q.gameSessionID = '$gameSessionID' AND q.puzzleID = '$puzzleID' AND q.userID = '$userID' group by q.puzzleID")->row();
 					if($tq1){
 						$totalPoints = $tq1->points;
 						$maxPoints = $tq1->maxPoints;
@@ -441,9 +472,9 @@ class Home_model extends CI_Model {
 			}
 		}
 		//check for elearning score entry
-		$isset = $this->db->query("SELECT count(*) as nor FROM tbl_userGameQuestionStatus WHERE gameSessionID = '$gameSessionID' AND userID = '$userID' AND questionID = '$questionID'")->row();
+		$isset = $this->db->query("SELECT count(*) as nor FROM tbl_userGameQuestionStatus WHERE gameSessionID = '$gameSessionID' AND userID = '$userID' AND questionID = '$questionID' AND attemptID = '$attemptID'")->row();
 		if($isset->nor == 0){
-			$this->db->query("INSERT INTO tbl_userGameQuestionStatus (gameSessionID,userID, gameID, puzzleID,gameMode ,questionID, answer, points,  time, datetime, status) VALUES ('$gameSessionID', '$userID', '$gameID', '$puzzleID', 'single', '$questionID', '$options', '$points', '$time', NOW(), '$answer'); ");
+			$this->db->query("INSERT INTO tbl_userGameQuestionStatus (gameSessionID,userID, gameID, puzzleID,gameMode ,questionID, answer, points,  time, datetime, status, attemptID) VALUES ('$gameSessionID', '$userID', '$gameID', '$puzzleID', 'single', '$questionID', '$answers[0]', '$points', '$time', NOW(), '$answer','$attemptID') ");
 			$redata = $this->db->query("SELECT count(*) as answered, sum(points) as total FROM tbl_userGameQuestionStatus WHERE gameSessionID = '$gameSessionID' AND userID = '$userID' ")->row();
 			$this->db->query("UPDATE tbl_userGameStatus SET points = ".$redata->total.", answeredQuestions = ".$redata->answered."  WHERE gameID = '$gameID' AND puzzleID = '$puzzleID' AND userID = '$userID' AND gameSessionID = '$gameSessionID'");
 		}
@@ -467,12 +498,12 @@ class Home_model extends CI_Model {
 		}
 		
 		//return $this->getUserGameStatus1($gameSessionID,$gameID,$puzzleID,$userID,$entityID);
-		return $this->getUserGameStatus1($gameSessionID,$gameID,$puzzleID,$userID,$entityID,$time,$gameType);
+		return $this->getUserGameStatus1($gameSessionID,$gameID,$puzzleID,$userID,$entityID,$time,$gameType,$attemptID);
 	}
-	function getUserGameStatus1($gameSessionID,$gameID,$puzzleID,$userID,$entityID,$time_taken,$gameType){
+	function getUserGameStatus1($gameSessionID,$gameID,$puzzleID,$userID,$entityID,$time_taken,$gameType,$attemptID){
 		//$userID = $this->session->userdata('userID');
 		$data2 = array();
-		$time= 0;$points = 0;$timeLeft = 0;$pendingQuestions = 0;$totalQuestions = 0;$mode = '';$randomQuestion=0;
+		$time= 0;$points = 0;$timeLeft = 0;$pendingQuestions = 0;$totalQuestions = 0;$mode = '';$randomQuestion=0;$startedTime=0;
 		$levelID = '';
 		if($gameType == 'PROGRAME'){
 			$tq = $this->db->query("CALL usp_getUserGameStatus('STOTAL_PROG','$gameID','$puzzleID','','$userID','')")->row();
@@ -499,7 +530,7 @@ class Home_model extends CI_Model {
 			$pq = $this->db->query("CALL usp_getUserGameStatus('SPOINTS','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
 		}
 		if($gameType == 'GPUZZLE'){
-			$pq = $this->db->query("CALL usp_getUserGameStatus('SPOINTS_GPUZZLE','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
+			$pq = $this->db->query("CALL usp_getUserGameStatus('SPOINTS_GPUZZLE','$gameID','$puzzleID','$attemptID','$userID','$gameSessionID')")->row();
 		}
 		mysqli_next_result($this->db->conn_id);
 		if($pq){
@@ -514,10 +545,13 @@ class Home_model extends CI_Model {
 		
 		if($gameType == 'PROGRAME'){
 		$cq = $this->db->query("CALL usp_getUserGameStatus('PENDING_PROG','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
-		}else{
+		}
+		if($gameType == 'QUIZ'){
 		$cq = $this->db->query("CALL usp_getUserGameStatus('PENDING','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
 		}
-		
+		if($gameType == 'GPUZZLE'){
+		$cq = $this->db->query("CALL usp_getUserGameStatus('PENDING_GPUZZLE','$gameID','$puzzleID','$attemptID','$userID','$gameSessionID')")->row();
+		}
 		mysqli_next_result($this->db->conn_id);
 		if($cq)$pendingQuestions = $totalQuestions - $cq->count;
 		
@@ -530,10 +564,18 @@ class Home_model extends CI_Model {
 		$data2['correctQuestions'] = 0;
 		$data2['totalQuestions'] = $totalQuestions;
 		$data2['gameType'] = $gameType;
+		if($gameType == 'GPUZZLE'){
+			//$uniqueID = $this->db->query("SELECT UUID() AS uniqueID")->row();
+			$data2['attemptID'] = $cq->attemptID;
+		}
 		if($gameType == 'PROGRAME'){
 			$data2['correctQuestions'] = $this->db->query("CALL usp_getUserGameStatus('CORRECT_PROG','$gameID','$puzzleID','','$userID','$gameSessionID')")->num_rows();
-		}else{
+		}
+		if($gameType == 'QUIZ'){
 			$data2['correctQuestions'] = $this->db->query("CALL usp_getUserGameStatus('CORRECT','$gameID','$puzzleID','','$userID','$gameSessionID')")->num_rows();
+		}
+		if($gameType == 'GPUZZLE'){
+			$data2['correctQuestions'] = $this->db->query("CALL usp_getUserGameStatus('CORRECT_GPUZZLE','$gameID','$puzzleID','$attemptID','$userID','$gameSessionID')")->num_rows();
 		}
 		mysqli_next_result($this->db->conn_id);
 		if($pendingQuestions == 0 || $timeLeft <= 0){
@@ -553,7 +595,7 @@ class Home_model extends CI_Model {
 		}
 		//die(implode("->",$data2));
 		//echo json_encode($data2);
-		//var_dump($data2);
+		//var_dump($data2['question']);
 		return $data2;
 	}
 }
