@@ -115,26 +115,39 @@ class Home_model extends CI_Model {
 	function getMyPositionAndScore(){
 		$userID=$_POST['userID'];
 		$gameID=$_POST['gameID'];
-		//$gameID="a9288df7-9cdd-11e6-972d-0401a55da801";
-		$this->db->query("SET @myScore = (SELECT SUM(q.points) AS TotalPoints
-		FROM 
-		(SELECT gameSessionID, userID, gameID, points FROM tbl_userGameStatus ) q
-		INNER JOIN tbl_userBasicDetails ubd ON q.userID=ubd.userID
-		INNER JOIN tbl_gameBasicDetails gbd ON q.gameID=gbd.gameID
-                         where gbd.gameID='".$gameID."' AND q.userID='".$userID."'
-		GROUP BY q.userID,q.gameID ORDER BY TotalPoints DESC);");
-		$getMyPositionAndScore=$this->db->query("SELECT (count(*)+1) as myPosition, @myScore as myScore FROM (SELECT q.userID, SUM(q.points) AS TotalPoints
-			FROM 
-		(SELECT gameSessionID, userID, gameID, points, 0 AS time FROM tbl_userGameStatus ) q
-		INNER JOIN tbl_userBasicDetails ubd ON q.userID=ubd.userID
-		INNER JOIN tbl_gameBasicDetails gbd ON q.gameID=gbd.gameID
-                         where gbd.gameID='".$gameID."' 
-		GROUP BY q.userID,q.gameID HAVING TotalPoints>@myScore ORDER BY TotalPoints DESC) result;")->result_array();
-		if(count($getMyPositionAndScore)>0){
-			echo $getMyPositionAndScore[0]['myPosition']."|".$getMyPositionAndScore[0]['myScore'];
-		}else{
-			echo "Error";
+		$totalPointsArray = array();
+		$getMyLevel = array();
+		$totalPointsArray = $this->db->query("SELECT ugs.puzzleID, ugs.lastLevelHighScore, ugs.points, gpd.puzzleLevelID FROM tbl_userGameStatus ugs
+												INNER JOIN tbl_gamePuzzleDetails_published gpd ON ugs.puzzleID = gpd.puzzleID
+												WHERE ugs.gameID='".$gameID."' AND ugs.userID='".$userID."' ORDER BY ugs.startedTime DESC LIMIT 0,1")->result_array();
+		//var_dump($totalPointsArray);exit();
+		if(count($totalPointsArray)>0){
+			$currentLevelID = $totalPointsArray[0]['puzzleLevelID'];
+			$getMyLevel=$this->db->query("SELECT sgr.gameLevelID,sgr.rulePoints,glp.levelName, sgr.minRulePoints FROM vw_singleGameRules sgr
+												INNER JOIN tbl_gameLevelsPredefined glp ON sgr.gameLevelID = glp.levelID 
+											WHERE sgr.gameID='".$gameID."' AND sgr.gameLevelID='".$currentLevelID."'")->result_array();
+			$currentLevelMinPoints = ($getMyLevel[0]['minRulePoints']-1);
+			$currentLevelMaxPoints = ($getMyLevel[0]['rulePoints']);
+			$levelName = $getMyLevel[0]['levelName'];
+			$myCurrentLevelPoints = $totalPointsArray[0]['points'];
+			if($myCurrentLevelPoints>$currentLevelMaxPoints){
+				$myCurrentLevelPoints = ($currentLevelMaxPoints+1);
+			}
 		}
+		else{
+			$getMyLevel=$this->db->query("SELECT sgr.gameLevelID,sgr.rulePoints,glp.levelName, sgr.minRulePoints FROM vw_singleGameRules sgr
+												INNER JOIN tbl_gameLevelsPredefined glp ON sgr.gameLevelID = glp.levelID WHERE sgr.gameID='".$gameID."' ORDER BY sgr.minRulePoints  LIMIT 1")->result_array();
+			$currentLevelID = $getMyLevel[0]['gameLevelID'];
+			$levelName = $getMyLevel[0]['levelName'];
+			$currentLevelMinPoints = 0;
+			$myCurrentLevelPoints = 0;
+		}
+		$myLevelPoints = $myCurrentLevelPoints+$currentLevelMinPoints;
+		
+		$getSkillCompetency=$this->db->query("SELECT (".$myCurrentLevelPoints."/(maxRulePoints-(minRulePoints-1)))*100 as skillCompetencyPerc FROM vw_skillGamesPointsRule WHERE gameID='".$gameID."' AND ".$myLevelPoints." BETWEEN (minRulePoints-1) AND maxRulePoints")->result_array();
+		$skillCompetencyPerc = round($getSkillCompetency[0]['skillCompetencyPerc']);
+		
+		echo $currentLevelID."|".$levelName."|".$currentLevelMinPoints."|".$skillCompetencyPerc;
 	}
 	/**
 	TO Get My Level Name and ID Based on entity
@@ -162,7 +175,7 @@ class Home_model extends CI_Model {
 	function getPuzzleID(){
 		$gameID=$_POST['gameID'];
 		$gameLevelID=$_POST['gameLevelID'];
-		$getAllPuzzle=$this->db->query("select puzzleID from tbl_gamePuzzleDetails_published where gameID='".$gameID."' and puzzleLevelID='".$gameLevelID."' and gameMode='single';")->result_array();
+		$getAllPuzzle=$this->db->query("SELECT puzzleID from tbl_gamePuzzleDetails_published where gameID='".$gameID."' and puzzleLevelID='".$gameLevelID."' and gameMode='single'")->result_array();
 		if(count($getAllPuzzle)>0){
 			$data='';
 			foreach($getAllPuzzle as $puzzleID){
@@ -178,6 +191,8 @@ class Home_model extends CI_Model {
 		$puzzleID = $_POST['puzzleID'];
 		$gametype = $_POST['gametype'];
 		$gameID = $_POST['gameID']; 
+		$runID = $_POST['runID']; 
+		$gameLevelID = $_POST['gameLevelID']; 
 		$noOfLives = 0;
 		
 		if($gametype == 'GPUZZLE'){
@@ -206,11 +221,12 @@ class Home_model extends CI_Model {
 		}
 		$gameSessionID = uniqid();
 		$vsessionID = $this->randStrGen(5);
+		$vpuzzleID = $this->randStrGen(5);
 		$vresult = $this->randStrGen(5);
 		
 		//$this->db->query("INSERT INTO tbl_userGameStatus (gameSessionID,userID, gameID, puzzleID, points, answeredQuestions, startedTime, datetime, status) VALUES ('$gameSessionID','$userID', '$gameID', '$puzzleID', 0, 1, NOW(), NOW(), 'started')");
-		$this->db->query("CALL usp_insUpdUserGameStatus('I','','$gameID','$puzzleID','0','$userID','',@".$vsessionID.",@".$vresult.")");
-		$query=$this->db->query("SELECT @".$vsessionID." as sessionID,@".$vresult." as status")->row();
+		$this->db->query("CALL usp_insUpdUserGameStatus('I','$runID','$gameID','$puzzleID','0','$userID','$gameLevelID',@".$vsessionID.",@".$vpuzzleID.",@".$vresult.")");
+		$query=$this->db->query("SELECT @".$vsessionID." as sessionID,@".$vpuzzleID." as nextPuzzleID,@".$vresult." as status")->row();
 		//mysqli_next_result($this->db->conn_id);
 		echo $query->sessionID."|".$noOfLives;
 		
@@ -311,9 +327,17 @@ class Home_model extends CI_Model {
 		}
 		if($gametype == 'GPUZZLE'){
 			$data2['correctQuestions'] = $this->db->query("CALL usp_getUserGameStatus('CORRECT_GPUZZLE','$gameID','$puzzleID','$attemptID','$userID','$gameSessionID')")->num_rows();
+			
 		}
-		
 		mysqli_next_result($this->db->conn_id);
+		if($gametype =='GPUZZLE'){
+			$link=$this->db->query("select linkToSystem,coursePath from tbl_gameChapterMaping where gameID='$gameID'")->row();			
+			if($link->linkToSystem == 'Yes'){
+				$data2['courseLink'] = $this->config->item("course_url").$link->coursePath;
+			}else{
+				$data2['courseLink'] = $link->coursePath;
+			}
+		}
 		if($pendingQuestions == 0 || $timeLeft <= 0){
 			
 			//$this->db->query("UPDATE tbl_userGameStatus SET status ='completed'  WHERE gameID = '$gameID' AND puzzleID = '$puzzleID' AND userID = '$userID' AND gameSessionID = '$gameSessionID'");
@@ -502,6 +526,7 @@ class Home_model extends CI_Model {
 	}
 	function getUserGameStatus1($gameSessionID,$gameID,$puzzleID,$userID,$entityID,$time_taken,$gameType,$attemptID){
 		//$userID = $this->session->userdata('userID');
+		$courseLink='';		
 		$data2 = array();
 		$time= 0;$points = 0;$timeLeft = 0;$pendingQuestions = 0;$totalQuestions = 0;$mode = '';$randomQuestion=0;$startedTime=0;
 		$levelID = '';
@@ -578,12 +603,51 @@ class Home_model extends CI_Model {
 			$data2['correctQuestions'] = $this->db->query("CALL usp_getUserGameStatus('CORRECT_GPUZZLE','$gameID','$puzzleID','$attemptID','$userID','$gameSessionID')")->num_rows();
 		}
 		mysqli_next_result($this->db->conn_id);
+		
+		if($gameType =='GPUZZLE'){
+			$link=$this->db->query("select linkToSystem,coursePath from tbl_gameChapterMaping where gameID='$gameID'")->row();
+			if($link->linkToSystem == 'Yes'){
+				$data2['courseLink'] = $this->config->item("course_url").$link->coursePath;
+			}else{
+				$data2['courseLink'] = $link->coursePath;
+			}
+		}
+		
 		if($pendingQuestions == 0 || $timeLeft <= 0){
 			
 			//$this->db->query("UPDATE tbl_userGameStatus SET status ='completed'  WHERE gameID = '$gameID' AND puzzleID = '$puzzleID' AND userID = '$userID' AND gameSessionID = '$gameSessionID'");
+			$vsessionID = $this->randStrGen(5);
+			$vpuzzleID = $this->randStrGen(5);
+			$vresult = $this->randStrGen(5);
 			
-			$this->db->query("CALL usp_insUpdUserGameStatus('US','$gameSessionID','$gameID','$puzzleID','0','$userID','completed',@sessionID,@result)");
-			//mysqli_next_result($this->db->conn_id);
+			$this->db->query("CALL usp_insUpdUserGameStatus('US','$gameSessionID','$gameID','$puzzleID','0','$userID','completed',@".$vsessionID.",@".$vpuzzleID.",@".$vresult.")");
+			$query=$this->db->query("SELECT @".$vsessionID." as sessionID,@".$vpuzzleID." as vnextPuzzleID,@".$vresult." as status")->row();
+			$data2['gameLevelID'] = $query->sessionID;
+			$data2['nextPuzzleID'] = $query->vnextPuzzleID;
+			
+			/* Give skill competency percentage*/
+			$totalPointsArray = $this->db->query("SELECT ugs.puzzleID, ugs.lastLevelHighScore, ugs.points, gpd.puzzleLevelID 
+													FROM tbl_userGameStatus ugs
+													INNER JOIN tbl_gamePuzzleDetails_published gpd ON ugs.puzzleID = gpd.puzzleID
+													WHERE ugs.gameID='".$gameID."' AND ugs.userID='".$userID."' ORDER BY ugs.startedTime DESC LIMIT 0,1")->result_array();
+			$currentLevelID = $totalPointsArray[0]['puzzleLevelID'];
+			$getMyLevel=$this->db->query("SELECT sgr.gameLevelID,sgr.rulePoints,glp.levelName, sgr.minRulePoints FROM vw_singleGameRules sgr
+												INNER JOIN tbl_gameLevelsPredefined glp ON sgr.gameLevelID = glp.levelID 
+											WHERE sgr.gameID='".$gameID."' AND sgr.gameLevelID='".$currentLevelID."'")->result_array();
+			$currentLevelMinPoints = ($getMyLevel[0]['minRulePoints']-1);
+			$currentLevelMaxPoints = ($getMyLevel[0]['rulePoints']);
+			
+			$myCurrentLevelPoints = $totalPointsArray[0]['points'];
+			if($myCurrentLevelPoints>$currentLevelMaxPoints){
+				$myCurrentLevelPoints = $currentLevelMaxPoints+1;
+			}
+			
+			$myLevelPoints = $myCurrentLevelPoints+$currentLevelMinPoints;
+			
+			$getSkillCompetency=$this->db->query("SELECT (".$myCurrentLevelPoints."/(maxRulePoints-(minRulePoints-1)))*100 as skillCompetencyPerc FROM vw_skillGamesPointsRule WHERE gameID='".$gameID."' AND ".$myLevelPoints." BETWEEN (minRulePoints-1) AND maxRulePoints")->result_array();
+			$data2['skillCompetencyPerc'] = round($getSkillCompetency[0]['skillCompetencyPerc']);
+			/* Give skill competency percentage*/
+			
 			
 			//$data2['nextLevel'] = $this->getUserGameModeLevel($gameID,$mode); 
 		}else{
@@ -598,5 +662,6 @@ class Home_model extends CI_Model {
 		//var_dump($data2['question']);
 		return $data2;
 	}
+	
 }
 ?>
