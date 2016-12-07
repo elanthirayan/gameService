@@ -34,7 +34,12 @@ class Home_model extends CI_Model {
 		if(count($result) > 0){
 			$pass=$this->decrypt_password($result[0]['password'],$password);
 			if($pass==$result[0]['password']){
-				echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|"."a9288df7-9cdd-11e6-972d-0401a55da801"."|"."feb32dea-55eb-11e5-b87a-0018514980e1";
+				$re=$this->db->query("SELECT gameID,entityID FROM tbl_unityGamePlayers WHERE userID = '".$result[0]['userID']."' AND status='P' AND playStatus=1")->result_array();				
+				if(count($re)>0){
+					echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID'];
+				}else{
+					echo "False";
+				}
 			}else{
 				echo "False";
 			}
@@ -238,6 +243,8 @@ class Home_model extends CI_Model {
 		$gameSessionID = $_POST['gameSessionID'];
 		$userID = $_POST['userID'];
 		$entityID = $_POST['entityID'];
+		$score = $_POST['score'];
+		$coins = $_POST['coins'];
 		$attemptID = '';
 		if(isset($_POST['qTime'])){
 			$time_taken = $_POST['qTime'];
@@ -274,6 +281,7 @@ class Home_model extends CI_Model {
 			$pq = $this->db->query("CALL usp_getUserGameStatus('SPOINTS','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
 		}
 		if($gametype == 'GPUZZLE'){
+			$this->db->query("UPDATE tbl_userGameStatus SET coinsCollected=".$coins.", distanceCovered=".$score." WHERE gameSessionID='".$gameSessionID."'");
 			$pq = $this->db->query("CALL usp_getUserGameStatus('SPOINTS_GPUZZLE','$gameID','$puzzleID','$attemptID','$userID','$gameSessionID')")->row();
 		}
 		mysqli_next_result($this->db->conn_id);
