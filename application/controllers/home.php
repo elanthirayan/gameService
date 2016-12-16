@@ -92,5 +92,8 @@ class Home extends CI_Controller {
 	function insUpdUserGameQuestion(){
 		echo json_encode($this->home_model->insUpdUserGameQuestion());
 	}
+	function getGameStore(){
+		echo json_encode($this->home_model->getGameStore());
+	}
 }
 ?>

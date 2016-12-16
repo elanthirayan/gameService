@@ -671,5 +671,22 @@ class Home_model extends CI_Model {
 		return $data2;
 	}
 	
+	function getGameStore(){
+		$companyID = $_POST["companyID"];
+		$userID = $_POST["userID"];
+		$gType = "GPUZZLE";
+		$gs=$this->db->query("SELECT CG.companyID,CG.gameID,CG.gameType,CGM.groupID,CGR.groupName,CGRM.userID,GBDP.gameName,GBDP.gameDesc,concat('".$this->config->item('game_host')."',GBDP.gameImage) as gameImage,GTH.gameThemeTitle,GT.gameType
+		FROM tbl_companyGames CG 
+		INNER JOIN tbl_companyGameMembers CGM ON CGM.companyGameID=CG.companyGameID 
+		INNER JOIN tbl_companyGroups CGR ON CGR.groupID=CGM.groupID
+		INNER JOIN tbl_companyGroupMembers CGRM ON CGRM.groupID=CGM.groupID
+		INNER JOIN tbl_gameBasicDetails_published GBDP ON GBDP.gameID = CG.gameID
+		INNER JOIN tbl_gameTypes GT ON GT.gameTypeID = GBDP.gameTypeID
+		INNER JOIN tbl_gameThemes GTH ON GTH.gameThemeID = GBDP.gameThemeID
+		WHERE CG.status='P' AND CGM.status='P' AND CGR.status='P' AND CGRM.status='P' AND GBDP.gameStatus='P' 
+		AND CG.companyID='".$companyID."' AND CGRM.userID='".$userID."' AND GT.gameType='".$gType."';");
+		return $gs->result_array();
+	}
+	
 }
 ?>
