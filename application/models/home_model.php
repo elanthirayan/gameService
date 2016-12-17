@@ -451,6 +451,7 @@ class Home_model extends CI_Model {
 		$entityID = $this->input->post('entityID');
 		$gameType = $this->input->post('gameType');
 		$attemptID = $this->input->post('attemptID');
+		$runID = $this->input->post('runID');
 		// $r= "userID : ".$userID." GameSessionID : ".$gameSessionID." GameID :".$gameID." PuzzleID:".$puzzleID." QuestionID : ".$questionID." AnswerID : ".$answer." EntityID : ".$entityID;
 		// echo $r;
 		// exit();
@@ -508,7 +509,14 @@ class Home_model extends CI_Model {
 		if($isset->nor == 0){
 			$this->db->query("INSERT INTO tbl_userGameQuestionStatus (gameSessionID,userID, gameID, puzzleID,gameMode ,questionID, answer, points,  time, datetime, status, attemptID) VALUES ('$gameSessionID', '$userID', '$gameID', '$puzzleID', 'single', '$questionID', '$answers[0]', '$points', '$time', NOW(), '$answer','$attemptID') ");
 			$redata = $this->db->query("SELECT count(*) as answered, sum(points) as total FROM tbl_userGameQuestionStatus WHERE gameSessionID = '$gameSessionID' AND userID = '$userID' ")->row();
-			$this->db->query("UPDATE tbl_userGameStatus SET points = ".$redata->total.", answeredQuestions = ".$redata->answered."  WHERE gameID = '$gameID' AND puzzleID = '$puzzleID' AND userID = '$userID' AND gameSessionID = '$gameSessionID'");
+			$oldData = $this->db->query("SELECT lastLevelHighScore FROM tbl_userGameStatus WHERE runID = '$runID' AND userID = '$userID' ORDER BY startedTime DESC LIMIT 0,1")->row();
+			if($oldData){
+				$highScore = (round($points) + round($oldData->lastLevelHighScore));
+			}
+			else{
+				$highScore = 0;
+			}
+			$this->db->query("UPDATE tbl_userGameStatus SET points = ".$redata->total.", answeredQuestions = ".$redata->answered.", lastLevelHighScore = ".$highScore."  WHERE gameID = '$gameID' AND puzzleID = '$puzzleID' AND userID = '$userID' AND gameSessionID = '$gameSessionID'");
 		}
 		//course Update score
 		if(isset($_POST['regID'])){
