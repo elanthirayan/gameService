@@ -696,6 +696,36 @@ class Home_model extends CI_Model {
 		AND CG.companyID='".$companyID."' AND CGRM.userID='".$userID."' AND GT.gameType='".$gType."';");
 		return $gs->result_array();
 	}
+	function getTopFourScorers(){
+		$gameID= $_POST["gameID"];
+		$gType = "GPUZZLE";
+		$topScorersArray = array();
+		$scorers=$this->db->query("SELECT sum(q.highScore) as highScores, q.puzzleID, q.lastLevelID, q.userID, q.gameID, q.points, ubd.profilepic, 	
+								upd.firstName, upd.lastName, q.minRulePoints, q.rulePoints FROM
+								(SELECT max(ugs.lastLevelHighScore) as highScore, ugs.gameSessionID, ugs.runID, ugs.userID, ugs.gameID, ugs.puzzleID, 
+									ugs.points, ugs.lastLevelID, sgr.minRulePoints, sgr.rulePoints FROM tbl_userGameStatus ugs
+									INNER JOIN vw_singleGameRules sgr ON ugs.gameID=sgr.gameID AND ugs.lastLevelID=sgr.gameLevelID
+									WHERE ugs.gameID='".$gameID."' group by ugs.userID, ugs.lastLevelID ORDER BY ugs.startedTime DESC) q
+								INNER JOIN tbl_userBasicDetails ubd ON q.userID=ubd.userID
+								INNER JOIN tbl_userProfileDetails upd ON ubd.userID=upd.userID
+								GROUP BY q.userID ORDER BY highScores DESC LIMIT 0,4");
+		$i=0;
+		foreach($scorers->result() as $row)
+		{
+			$topScorersArray[$i]['firstName'] = $row->firstName;
+			$topScorersArray[$i]['lastName'] = $row->lastName;
+			$topScorersArray[$i]['profilepic'] = $row->profilepic;
+			$topScorersArray[$i]['highScores'] = $row->highScores;
+			$topScorersArray[$i]['points'] = $row->points;
+			$topScorersArray[$i]['minRulePoints'] = $row->minRulePoints;
+			$topScorersArray[$i]['rulePoints'] = $row->rulePoints;
+			$topScorersArray[$i]['rank'] = $i+1;
+			$completionPerc = ($topScorersArray[$i]['points']/($topScorersArray[$i]['rulePoints']-($topScorersArray[$i]['minRulePoints']-1)))*100;
+			$topScorersArray[$i++]['completionPercentage'] = $completionPerc;
+			
+		}
+		return $topScorersArray;
+	}
 	
 }
 ?>
