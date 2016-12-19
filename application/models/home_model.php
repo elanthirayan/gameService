@@ -698,33 +698,50 @@ class Home_model extends CI_Model {
 	}
 	function getTopFourScorers(){
 		$gameID= $_POST["gameID"];
+		$userID= $_POST["userID"];
 		$gType = "GPUZZLE";
-		$topScorersArray = array();
+		$topScorersArray = array(); $myScoreArray = array(); $retvalue = array();
 		$scorers=$this->db->query("SELECT sum(q.highScore) as highScores, q.puzzleID, q.lastLevelID, q.userID, q.gameID, q.points, ubd.profilepic, 	
 								upd.firstName, upd.lastName, q.minRulePoints, q.rulePoints FROM
 								(SELECT max(ugs.lastLevelHighScore) as highScore, ugs.gameSessionID, ugs.runID, ugs.userID, ugs.gameID, ugs.puzzleID, 
 									ugs.points, ugs.lastLevelID, sgr.minRulePoints, sgr.rulePoints FROM tbl_userGameStatus ugs
 									INNER JOIN vw_singleGameRules sgr ON ugs.gameID=sgr.gameID AND ugs.lastLevelID=sgr.gameLevelID
-									WHERE ugs.gameID='".$gameID."' group by ugs.userID, ugs.lastLevelID ORDER BY ugs.startedTime DESC) q
+									WHERE ugs.gameID='".$gameID."' group by ugs.userID, ugs.lastLevelID ORDER BY ugs.startedTime DESC LIMIT 0,10000) q
 								INNER JOIN tbl_userBasicDetails ubd ON q.userID=ubd.userID
 								INNER JOIN tbl_userProfileDetails upd ON ubd.userID=upd.userID
-								GROUP BY q.userID ORDER BY highScores DESC LIMIT 0,4");
-		$i=0;
+								GROUP BY q.userID ORDER BY highScores DESC LIMIT 0,10000");
+		$i=0; $j=0;
 		foreach($scorers->result() as $row)
 		{
-			$topScorersArray[$i]['firstName'] = $row->firstName;
-			$topScorersArray[$i]['lastName'] = $row->lastName;
-			$topScorersArray[$i]['profilepic'] = $row->profilepic;
-			$topScorersArray[$i]['highScores'] = $row->highScores;
-			$topScorersArray[$i]['points'] = $row->points;
-			$topScorersArray[$i]['minRulePoints'] = $row->minRulePoints;
-			$topScorersArray[$i]['rulePoints'] = $row->rulePoints;
-			$topScorersArray[$i]['rank'] = $i+1;
-			$completionPerc = ($topScorersArray[$i]['points']/($topScorersArray[$i]['rulePoints']-($topScorersArray[$i]['minRulePoints']-1)))*100;
-			$topScorersArray[$i++]['completionPercentage'] = $completionPerc;
-			
+			if($i<4){
+				$topScorersArray[$i]['firstName'] = $row->firstName;
+				$topScorersArray[$i]['lastName'] = $row->lastName;
+				$topScorersArray[$i]['profilepic'] = $this->config->item('game_host').$row->profilepic;
+				$topScorersArray[$i]['highScores'] = $row->highScores;
+				$topScorersArray[$i]['points'] = $row->points;
+				$topScorersArray[$i]['minRulePoints'] = $row->minRulePoints;
+				$topScorersArray[$i]['rulePoints'] = $row->rulePoints;
+				$topScorersArray[$i]['rank'] = $i+1;
+				$completionPerc = ($topScorersArray[$i]['points']/($topScorersArray[$i]['rulePoints']-($topScorersArray[$i]['minRulePoints']-1)))*100;
+				$topScorersArray[$i]['completionPercentage'] = $completionPerc;
+			}
+			if($userID==$row->userID){
+				$myScoreArray[$j]['firstName'] = $row->firstName;
+				$myScoreArray[$j]['lastName'] = $row->lastName;
+				$myScoreArray[$j]['profilepic'] = $this->config->item('game_host').$row->profilepic;
+				$myScoreArray[$j]['highScores'] = $row->highScores;
+				$myScoreArray[$j]['points'] = $row->points;
+				$myScoreArray[$j]['minRulePoints'] = $row->minRulePoints;
+				$myScoreArray[$j]['rulePoints'] = $row->rulePoints;
+				$myScoreArray[$j]['rank'] = $i+1;
+				$compPerc = ($myScoreArray[$j]['points']/($myScoreArray[$j]['rulePoints']-($myScoreArray[$j]['minRulePoints']-1)))*100;
+				$myScoreArray[$j]['completionPercentage'] = $compPerc;
+			}
+			$i++;
 		}
-		return $topScorersArray;
+		$retvalue['leaderboardArray'] = $topScorersArray;
+		$retvalue['myScoreArray'] = $myScoreArray;
+		return $retvalue;
 	}
 	
 }
