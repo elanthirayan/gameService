@@ -100,5 +100,8 @@ class Home extends CI_Controller {
 	function getTopFourScorers(){
 		echo json_encode($this->home_model->getTopFourScorers());
 	}
+	function update_old_data(){
+		echo json_encode($this->home_model->update_old_data());
+	}
 }
 ?>

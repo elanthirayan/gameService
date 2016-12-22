@@ -129,15 +129,18 @@ class Home_model extends CI_Model {
 		//var_dump($totalPointsArray);exit();
 		if(count($totalPointsArray)>0){
 			$currentLevelID = $totalPointsArray[0]['puzzleLevelID'];
-			$getMyLevel=$this->db->query("SELECT sgr.gameLevelID,sgr.rulePoints,glp.levelName, sgr.minRulePoints FROM vw_singleGameRules sgr
+			$getMyLevel=$this->db->query("SELECT sgr.gameLevelID, sgr.rulePoints, glp.levelName, sgr.minRulePoints FROM vw_singleGameRules sgr
 												INNER JOIN tbl_gameLevelsPredefined glp ON sgr.gameLevelID = glp.levelID 
 											WHERE sgr.gameID='".$gameID."' AND sgr.gameLevelID='".$currentLevelID."'")->result_array();
 			$currentLevelMinPoints = ($getMyLevel[0]['minRulePoints']-1);
 			$currentLevelMaxPoints = ($getMyLevel[0]['rulePoints']);
 			$levelName = $getMyLevel[0]['levelName'];
 			$myCurrentLevelPoints = $totalPointsArray[0]['points'];
-			if($myCurrentLevelPoints>$currentLevelMaxPoints){
+			if(($myCurrentLevelPoints+$currentLevelMinPoints)>=$currentLevelMaxPoints){
 				$myCurrentLevelPoints = ($currentLevelMaxPoints+1);
+			}
+			if(($myCurrentLevelPoints+$currentLevelMinPoints)<$currentLevelMaxPoints){
+				$myCurrentLevelPoints = 0;
 			}
 		}
 		else{
@@ -743,6 +746,12 @@ class Home_model extends CI_Model {
 		$retvalue['myScoreArray'] = $myScoreArray;
 		return $retvalue;
 	}
-	
+	public function update_old_data(){
+		$runID=$_POST["runID"];
+		$userID=$_POST["userID"];
+		$gameID=$_POST["gameID"];
+		$this->db->query("UPDATE tbl_userGameStatus SET status='completed' WHERE userID = '".$userID."' AND gameID = '".$gameID."' AND runID !='".$runID."'");
+		return true;		
+	}
 }
 ?>
