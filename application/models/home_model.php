@@ -395,7 +395,7 @@ class Home_model extends CI_Model {
 		}
 		
 		if($qp){
-			$question['questionName'] = strip_tags(html_entity_decode(utf8_encode($qp->questionName)),'</span>'); 
+			$question['questionName'] = strip_tags(html_entity_decode(utf8_encode(trim($qp->questionName))),'</span>'); 
 			$question['questionID'] = $qp->questionID; 
 			$question['questionType'] = $qp->questionType; 
 			$oq = $this->db->query("CALL usp_getGameQuestionOptions('S','".$qp->questionID."')")->result();
