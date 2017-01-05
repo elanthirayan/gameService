@@ -18,6 +18,15 @@ class Home extends CI_Controller {
 		$this->home_model->login();
 	}
 	/**
+	TO Android App Login
+	Parameter [Post]: UserName and Password
+	Return : True OR False
+	
+	**/
+	public function appLogin(){
+		$this->home_model->appLogin();
+	}
+	/**
 	TO Get Top Three Users and Scores for particular Game
 	Parameter : @GameID
 	Return : userID,userName,firstName,profilepic,TotalPoints
