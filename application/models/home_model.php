@@ -48,6 +48,28 @@ class Home_model extends CI_Model {
 			echo "False";
 		}
 	}
+	/**
+	TO Android App Login
+	Parameter : UserName and Password
+	Return : True OR False
+		
+	**/
+	public function appLogin(){
+		$userName=$_POST["userName"];
+		$password=$_POST["password"];
+		$result=$this->db->query("SELECT UB.userID,UB.userName,UB.password,UP.firstName FROM tbl_userBasicDetails UB INNER JOIN tbl_userProfileDetails UP ON UP.userID=UB.userID WHERE UB.userName='$userName' OR UP.primaryEmailID='$userName';")->result_array();
+		if(count($result) > 0){
+			$pass=$this->decrypt_password($result[0]['password'],$password);
+			if($pass==$result[0]['password']){
+				$re=$this->db->query("select entityID from tbl_userDepartmentMapping where userID='".$result[0]['userID']."'");
+				echo "True|".$result[0]['userID']."|".$result[0]['firstName']."| |".$re[0]['entityID'];
+			}else{
+				echo "False";
+			}
+		}else{
+			echo "False";
+		}
+	}
 	
 	/**
 	TO Get Top Three Users and Scores for particular Game
