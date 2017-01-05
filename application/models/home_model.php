@@ -61,7 +61,7 @@ class Home_model extends CI_Model {
 		if(count($result) > 0){
 			$pass=$this->decrypt_password($result[0]['password'],$password);
 			if($pass==$result[0]['password']){
-				$re=$this->db->query("select entityID from tbl_userDepartmentMapping where userID='".$result[0]['userID']."'");
+				$re=$this->db->query("select entityID from tbl_userDepartmentMapping where userID='".$result[0]['userID']."'")->result_array();
 				echo "True|".$result[0]['userID']."|".$result[0]['firstName']."| |".$re[0]['entityID'];
 			}else{
 				echo "False";
