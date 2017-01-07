@@ -23,7 +23,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | a PHP script and you can easily do that on your own.
 |
 */
-$config['base_url'] = 'http://localhost:8081/gameService/';
+$config['base_url'] = 'http://localhost:8080/gameService/';
 
 /*
 |--------------------------------------------------------------------------
@@ -516,5 +516,5 @@ $config['proxy_ips'] = '';
 
 /* Password salt length */
 $config['salt_length'] 		= 10;
-$config['course_url'] = 'http://localhost:8081/XUCoreSC/ui_course/elearning/';
-$config['game_host'] = 'http://localhost:8081/XUCoreSC/';
+$config['course_url'] = 'http://localhost:8080/XUCoreGamification/ui_course/elearning/';
+$config['game_host'] = 'http://localhost:8080/XUCoreGamification/';
