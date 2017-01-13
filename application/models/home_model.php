@@ -271,6 +271,7 @@ class Home_model extends CI_Model {
 		$entityID = $_POST['entityID'];
 		$score = $_POST['score'];
 		$coins = $_POST['coins'];
+		$overallScore = $_POST['overallScore'];
 		$attemptID = '';
 		if(isset($_POST['qTime'])){
 			$time_taken = $_POST['qTime'];
@@ -307,7 +308,7 @@ class Home_model extends CI_Model {
 			$pq = $this->db->query("CALL usp_getUserGameStatus('SPOINTS','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
 		}
 		if($gametype == 'GPUZZLE'){
-			$this->db->query("UPDATE tbl_userGameStatus SET coinsCollected=".$coins.", distanceCovered=".$score." WHERE gameSessionID='".$gameSessionID."'");
+			
 			$pq = $this->db->query("CALL usp_getUserGameStatus('SPOINTS_GPUZZLE','$gameID','$puzzleID','$attemptID','$userID','$gameSessionID')")->row();
 		}
 		mysqli_next_result($this->db->conn_id);
@@ -334,6 +335,7 @@ class Home_model extends CI_Model {
 			$cq = $this->db->query("CALL usp_getUserGameStatus('PENDING','$gameID','$puzzleID','','$userID','$gameSessionID')")->row();
 		}
 		if($gametype == 'GPUZZLE'){
+			$this->db->query("UPDATE tbl_userGameStatus SET coinsCollected=".$coins.", distanceCovered=".$score.", overallScore=".$overallScore." WHERE gameSessionID='".$gameSessionID."'");
 			$cq = $this->db->query("CALL usp_getUserGameStatus('PENDING_GPUZZLE','$gameID','$puzzleID','$attemptID','$userID','$gameSessionID')")->row();
 		}
 		mysqli_next_result($this->db->conn_id);
@@ -542,6 +544,7 @@ class Home_model extends CI_Model {
 			else{
 				$highScore = 0;
 			}
+			//$overallScore = (round($oldData->overallScore) + $highScore);
 			$this->db->query("UPDATE tbl_userGameStatus SET points = ".$redata->total.", answeredQuestions = ".$redata->answered.", lastLevelHighScore = ".$highScore."  WHERE gameID = '$gameID' AND puzzleID = '$puzzleID' AND userID = '$userID' AND gameSessionID = '$gameSessionID'");
 		}
 		//course Update score
