@@ -516,5 +516,5 @@ $config['proxy_ips'] = '';
 
 /* Password salt length */
 $config['salt_length'] 		= 10;
-$config['course_url'] = 'http://localhost:8081/XUCoreGamification/ui_course/elearning/';
+$config['course_url'] = 'http://localhost:8081/XUCoreGamification/learner/course_view/';
 $config['game_host'] = 'http://localhost:8081/XUCoreGamification/';
