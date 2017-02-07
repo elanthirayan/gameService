@@ -180,15 +180,17 @@ class Home_model extends CI_Model {
 		
 		echo $currentLevelID."|".$levelName."|".$currentLevelMinPoints."|".$skillCompetencyPerc;
 	}
+	
+	
 	/**
 	TO Get My Level Name and ID Based on entity
 	Parameter [Post]: @entityID
 	Return : levelID,levelName
 	**/
 	function getAllLevels(){
-		//$entityID=$_POST['entityID'];
-		$entityID='feb32dea-55eb-11e5-b87a-0018514980e1';
-		$getAllLevels=$this->db->query("SELECT levelID,levelName FROM tbl_gameLevelsPredefined  where entityID='".$entityID."' AND status='P' ORDER BY levelOrder ASC;")->result_array();
+		$entityID=$_POST['entityID'];
+		//$entityID='feb32dea-55eb-11e5-b87a-0018514980e1';
+		$getAllLevels=$this->db->query("SELECT levelID,levelName FROM tbl_gameLevelsPredefined  where entityID='".$entityID."' AND status='P' ORDER BY levelOrder ASC")->result_array();
 		if(count($getAllLevels)>0){
 			$data='';
 			foreach($getAllLevels as $levels){
@@ -198,6 +200,28 @@ class Home_model extends CI_Model {
 		}else{
 			echo "Error";
 		}
+	}
+	
+	/**
+	TO Get My Score and Position Based on game events
+	Parameter [Post]: @userID,@gameID
+	Return : myPosition,myScore
+	**/
+	function getMyPositionAndScoreEvents(){
+		$currentLevelID=$_POST['levelID'];
+		$levelName=$_POST['levelName'];
+		$totalPointsArray = array();
+		$getMyLevel = array();
+		
+		$getMyLevel=$this->db->query("SELECT sgr.gameLevelID, sgr.rulePoints, glp.levelName, sgr.minRulePoints FROM vw_singleGameRules sgr
+											INNER JOIN tbl_gameLevelsPredefined glp ON sgr.gameLevelID = glp.levelID 
+										WHERE sgr.gameID='".$gameID."' AND sgr.gameLevelID='".$currentLevelID."'")->result_array();
+		$currentLevelMinPoints = ($getMyLevel[0]['minRulePoints']-1);
+		$currentLevelMaxPoints = ($getMyLevel[0]['rulePoints']);
+		$myCurrentLevelPoints = 0;
+		$myCurrentLevelPoints = ($currentLevelMaxPoints+1);
+		$skillCompetencyPerc = 0;
+		echo $currentLevelID."|".$levelName."|".$currentLevelMinPoints."|".$skillCompetencyPerc;
 	}
 	
 	/**

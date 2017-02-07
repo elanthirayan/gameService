@@ -58,6 +58,16 @@ class Home extends CI_Controller {
 	public function getMyPositionAndScore(){
 		$this->home_model->getMyPositionAndScore();
 	}
+	
+	/**
+	TO Get My Score and Position Based on game events
+	Parameter [Post]: @userID,@gameID
+	Return : myPosition,myScore
+	**/
+	public function getMyPositionAndScoreEvents(){
+		$this->home_model->getMyPositionAndScoreEvents();
+	}
+	
 	/**
 	TO Get My Level Name and ID Based on entity
 	Parameter [Post]: @entityID
