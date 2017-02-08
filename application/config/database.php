@@ -75,10 +75,14 @@ $query_builder = TRUE;
 
 $db['default'] = array(
 	'dsn'	=> '',
-	'hostname' => '128.199.141.229',
+	/*'hostname' => '128.199.141.229',
 	'username' => 'root',
 	'password' => 'Q8w1568',
-	'database' => 'gLearnDemo',
+	'database' => 'XUCoreDB',	*/
+	'hostname' => 'localhost',
+	'username' => 'root',
+	'password' => '',
+	'database' => 'xucoreeventsdb',
 	'dbdriver' => 'mysqli',
 	'dbprefix' => '',
 	'pconnect' => FALSE,

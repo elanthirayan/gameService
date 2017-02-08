@@ -196,7 +196,7 @@ class Home_model extends CI_Model {
 			foreach($getAllLevels as $levels){
 				$data .=$levels['levelID']."|".$levels['levelName'].'\n';
 			}
-			echo $data;
+			echo json_encode($getAllLevels);
 		}else{
 			echo "Error";
 		}
@@ -208,6 +208,7 @@ class Home_model extends CI_Model {
 	Return : myPosition,myScore
 	**/
 	function getMyPositionAndScoreEvents(){
+		$gameID=$_POST['gameID'];
 		$currentLevelID=$_POST['levelID'];
 		$levelName=$_POST['levelName'];
 		$totalPointsArray = array();
