@@ -122,5 +122,11 @@ class Home extends CI_Controller {
 	function update_old_data(){
 		echo json_encode($this->home_model->update_old_data());
 	}
+	function saveProfilePic(){
+		echo json_encode($this->home_model->saveProfilePic());
+	}
+	function saveEventCertificateInfo($type){
+		echo json_encode($this->home_model->saveEventCertificateInfo($type));
+	}
 }
 ?>
