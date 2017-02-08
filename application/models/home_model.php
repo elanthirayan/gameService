@@ -814,16 +814,17 @@ class Home_model extends CI_Model {
 		$gameLevelID=$_POST["gameLevelID"];
 		
 		if($type=='PlayedOrNot'){
+			$certificateImg=$_POST["certificateImg"];
 			$query = $this->db->query("SELECT id FROM tbl_userEventCertificateInfo WHERE userID='".$userID."' 
 										AND gameID='".$gameID."' AND gameLevelID = '".$gameLevelID."' ")->result_array();
 			if(count($query)>0){
 				$id = $query[0]['id'];
-				$this->db->query("UPDATE tbl_userEventCertificateInfo SET playedOrNot=1 WHERE id = '".$id."' ");
+				$this->db->query("UPDATE tbl_userEventCertificateInfo SET playedOrNot=1, certificateImg = '".$certificateImg."' WHERE id = '".$id."' ");
 			}else{
 				$uniqueID = $this->db->query("SELECT UUID() as uID")->row();
 				$uid = $uniqueID->uID;
-				$this->db->query("INSERT INTO tbl_userEventCertificateInfo(id, userID, gameID, gameLevelID, playedOrNot)
-									VALUES ('".$uid."', '".$userID."', '".$gameID."', '".$gameLevelID."', 1) ");
+				$this->db->query("INSERT INTO tbl_userEventCertificateInfo(id, userID, gameID, gameLevelID, certificateImg,
+									playedOrNot) VALUES ('".$uid."', '".$userID."', '".$gameID."', '".$gameLevelID."', '".$certificateImg."', 1) ");
 			}
 		}
 		if($type=='CertificatePrintedOrNot'){	
