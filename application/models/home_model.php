@@ -806,7 +806,20 @@ class Home_model extends CI_Model {
 	public function saveProfilePic(){
 		$userID=$_POST["userID"];
 		$imageName=$_POST["profilepic"];
-		$this->db->query("UPDATE tbl_userBasic_Details SET profilepic='".$imageName."' WHERE userID = '".$userID."' ");
+		$gameID=$_POST["gameID"];
+		$gameLevelID=$_POST["gameLevelID"];
+		$this->db->query("UPDATE tbl_userBasicDetails SET profilepic='".$imageName."' WHERE userID = '".$userID."' ");
+		$query = $this->db->query("SELECT id FROM tbl_userEventCertificateInfo WHERE userID='".$userID."' 
+										AND gameID='".$gameID."' AND gameLevelID = '".$gameLevelID."' ")->result_array();
+		if(count($query)>0){
+			$id = $query[0]['id'];
+			$this->db->query("UPDATE tbl_userEventCertificateInfo SET playedOrNot=1, updationDatetime=now() WHERE id = '".$id."' ");
+		}else{
+			$uniqueID = $this->db->query("SELECT UUID() as uID")->row();
+			$uid = $uniqueID->uID;
+			$this->db->query("INSERT INTO tbl_userEventCertificateInfo(id, userID, gameID, gameLevelID, playedOrNot, updationDatetime) 
+							VALUES ('".$uid."', '".$userID."', '".$gameID."', '".$gameLevelID."', 1, now()) ");
+		}
 		return true;		
 	}
 	public function saveEventCertificateInfo($type){
@@ -820,25 +833,27 @@ class Home_model extends CI_Model {
 										AND gameID='".$gameID."' AND gameLevelID = '".$gameLevelID."' ")->result_array();
 			if(count($query)>0){
 				$id = $query[0]['id'];
-				$this->db->query("UPDATE tbl_userEventCertificateInfo SET playedOrNot=1, certificateImg = '".$certificateImg."' WHERE id = '".$id."' ");
+				$this->db->query("UPDATE tbl_userEventCertificateInfo SET playedOrNot=1, certificateImg = '".$certificateImg."', updationDatetime=now() WHERE id = '".$id."' ");
 			}else{
 				$uniqueID = $this->db->query("SELECT UUID() as uID")->row();
 				$uid = $uniqueID->uID;
 				$this->db->query("INSERT INTO tbl_userEventCertificateInfo(id, userID, gameID, gameLevelID, certificateImg,
-									playedOrNot) VALUES ('".$uid."', '".$userID."', '".$gameID."', '".$gameLevelID."', '".$certificateImg."', 1) ");
+									playedOrNot, updationDatetime) VALUES ('".$uid."', '".$userID."', '".$gameID."', '".$gameLevelID."', '".$certificateImg."', 1, now()) ");
 			}
 		}
 		if($type=='CertificatePrintedOrNot'){	
-			$this->db->query("UPDATE tbl_userEventCertificateInfo SET certificatePrintedOrNot=1 WHERE userID='".$userID."' 
-										AND gameID='".$gameID."' AND gameLevelID = '".$gameLevelID."' ");
+			$this->db->query("UPDATE tbl_userEventCertificateInfo SET certificatePrintedOrNot=1, updationDatetime=now() 
+									WHERE userID='".$userID."' AND gameID='".$gameID."' AND gameLevelID = '".$gameLevelID."' ");
 		}
 		if($type=='EmailCertificateOrNot'){	
-			$this->db->query("UPDATE tbl_userEventCertificateInfo SET emailCertificateOrNot=1 WHERE userID='".$userID."' 
-										AND gameID='".$gameID."' AND gameLevelID = '".$gameLevelID."' ");
+			$emailID=$_POST["emailID"];
+			$this->db->query("UPDATE tbl_userProfileDetails SET primaryEmailID='".$emailID."' WHERE userID='".$userID."' ");
+			$this->db->query("UPDATE tbl_userEventCertificateInfo SET emailCertificateOrNot=1, updationDatetime=now() 
+									WHERE userID='".$userID."' AND gameID='".$gameID."' AND gameLevelID = '".$gameLevelID."' ");
 		}
 		if($type=='FacebookShare'){	
-			$this->db->query("UPDATE tbl_userEventCertificateInfo SET facebookShare=1 WHERE userID='".$userID."' 
-										AND gameID='".$gameID."' AND gameLevelID = '".$gameLevelID."' ");
+			$this->db->query("UPDATE tbl_userEventCertificateInfo SET facebookShare=1, updationDatetime=now()
+									WHERE userID='".$userID."' AND gameID='".$gameID."' AND gameLevelID = '".$gameLevelID."' ");
 		}
 		return true;		
 	}
