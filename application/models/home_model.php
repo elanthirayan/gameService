@@ -28,25 +28,148 @@ class Home_model extends CI_Model {
 	Note : @ not allowed in url so replaced it to "attherate" 
 	**/
 	public function login(){
+		$entityID = '';
 		$userName=$_POST["userName"];
-		$password=$_POST["password"];
-		$result=$this->db->query("SELECT UB.userID,UB.userName,UB.password,UP.firstName FROM tbl_userBasicDetails UB INNER JOIN tbl_userProfileDetails UP ON UP.userID=UB.userID WHERE UB.userName='$userName' OR UP.primaryEmailID='$userName';")->result_array();
-		if(count($result) > 0){
-			$pass=$this->decrypt_password($result[0]['password'],$password);
-			if($pass==$result[0]['password']){
-				$re=$this->db->query("SELECT gameID,entityID FROM tbl_unityGamePlayers WHERE userID = '".$result[0]['userID']."' AND status='P' AND playStatus=1")->result_array();				
-				if(count($re)>0){
-					$this->db->query("UPDATE tbl_userGameStatus SET status='completed' WHERE userID = '".$result[0]['userID']."' AND gameID = '".$re[0]['gameID']."' ");
-					echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID'];
+		$nameArray = array();
+		$nameArray = explode(" ",trim($userName));
+		$firstName = ''; $middleName = ''; $lastName = '';
+		$k=0;
+		for($i=0;$i<count($nameArray);$i++){
+			if($i==0){
+				$firstName = $nameArray[$i];
+			}
+			if($k==1){
+				$lastName = $lastName.' '.$nameArray[$i];
+			}
+			if($i==1){
+				$middleName = $nameArray[$i];
+				$k++;
+			}
+			
+		}
+		if($firstName!=''){
+			$userCheck=$this->db->query("SELECT ubd.userID, ubd.profilepic, ubd.userName, upd.primaryEmailID, upd.password 
+											FROM tbl_userBasicDetails ubd 
+											INNER JOIN tbl_userProfileDetails upd ON ubd.userID=upd.userID
+											WHERE upd.firstName = '".$firstName."' ")->result_array();
+			if(count($userCheck)>0){
+				return $userCheck;
+			}
+			else{
+				$getFreeUserID = $this->db->query("SELECT ubd.userID, ubd.userName, upd.primaryEmailID FROM tbl_userBasicDetails ubd 
+											INNER JOIN tbl_userProfileDetails upd ON ubd.userID=upd.userID
+											INNER JOIN tbl_userdepartmentmapping udm ON ubd.userID=udm.userID
+											WHERE udm.entityID='".$entityID."' AND upd.firstName = '' AND upd.lastName='' LIMIT 0,1")->result_array();
+				if(count($getFreeUserID)>0){
+					$userID = $getFreeUserID[0]['userID'];
+					$userName = $getFreeUserID[0]['userName'];
+					$emailID = $getFreeUserID[0]['primaryEmailID'];
+					$assignUserID = $this->db->query("UPDATE tbl_userProfileDetails SET firstName='".$firstName."', middleName='".$middleName."', lastName='".$lastName."' WHERE userID = '".$userID."'");
+					
+					$password=$_POST["password"];
+					$result=$this->db->query("SELECT UB.userID,UB.userName,UB.password,UP.firstName FROM tbl_userBasicDetails UB INNER JOIN tbl_userProfileDetails UP ON UP.userID=UB.userID WHERE UB.userName='$userName' OR UP.primaryEmailID='$emailID'")->result_array();
+					if(count($result) > 0){
+						$pass=$this->decrypt_password($result[0]['password'],$password);
+						if($pass==$result[0]['password']){
+							$re=$this->db->query("SELECT gameID,entityID FROM tbl_unityGamePlayers WHERE userID = '".$result[0]['userID']."' AND status='P'")->result_array();				
+							if(count($re)>0){
+								$this->db->query("UPDATE tbl_userGameStatus SET status='completed' WHERE userID = '".$result[0]['userID']."' AND gameID = '".$re[0]['gameID']."' ");
+								echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID'];
+							}else{
+								echo "False";
+							}
+						}else{
+							echo "False";
+						}
+					}else{
+						echo "False";
+					}
+				}
+				else{
+					echo "False";
+				}
+				
+			}
+		}
+	}
+	
+	public function checkExistingOrNewUser($type){
+		if($type=='Existing'){
+			$userName=$_POST["userName"];
+			$password=$_POST["password"];
+			$result=$this->db->query("SELECT UB.userID,UB.userName,UB.password,UP.firstName FROM tbl_userBasicDetails UB INNER JOIN tbl_userProfileDetails UP ON UP.userID=UB.userID WHERE UB.userName='$userName' OR UP.primaryEmailID='$userName'")->result_array();
+			if(count($result) > 0){
+				$pass=$this->decrypt_password($result[0]['password'],$password);
+				if($pass==$result[0]['password']){
+					$re=$this->db->query("SELECT gameID,entityID FROM tbl_unityGamePlayers WHERE userID = '".$result[0]['userID']."' AND status='P'")->result_array();				
+					if(count($re)>0){
+						$this->db->query("UPDATE tbl_userGameStatus SET status='completed' WHERE userID = '".$result[0]['userID']."' AND gameID = '".$re[0]['gameID']."' ");
+						$gameInfo=$this->db->query("SELECT gameID,gameLevelID,playedOrNot FROM tbl_userEventCertificateInfo WHERE userID = '".$result[0]['userID']."' AND status='P'")->result_array();	
+						
+						echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID'];
+					}else{
+						echo "False";
+					}
 				}else{
 					echo "False";
 				}
 			}else{
 				echo "False";
 			}
-		}else{
-			echo "False";
 		}
+		if($type=='New'){
+			$entityID='';
+			$userName=$_POST["userName"];
+			$nameArray = array();
+			$nameArray = explode(" ",trim($userName));
+			$firstName = ''; $middleName = ''; $lastName = '';
+			$k=0;
+			for($i=0;$i<count($nameArray);$i++){
+				if($i==0){
+					$firstName = $nameArray[$i];
+				}
+				if($k==1){
+					$lastName = $lastName.' '.$nameArray[$i];
+				}
+				if($i==1){
+					$middleName = $nameArray[$i];
+					$k++;
+				}
+			}
+			$password=$_POST["password"];
+			$getFreeUserID = $this->db->query("SELECT ubd.userID, ubd.userName, upd.primaryEmailID FROM tbl_userBasicDetails ubd 
+											INNER JOIN tbl_userProfileDetails upd ON ubd.userID=upd.userID
+											INNER JOIN tbl_userdepartmentmapping udm ON ubd.userID=udm.userID
+											WHERE udm.entityID='".$entityID."' AND upd.firstName = '' AND upd.lastName='' LIMIT 0,1")->result_array();
+			if(count($getFreeUserID)>0){	
+				$userID = $getFreeUserID[0]['userID'];
+				$userName = $getFreeUserID[0]['userName'];
+				$emailID = $getFreeUserID[0]['primaryEmailID'];
+				$assignUserID = $this->db->query("UPDATE tbl_userProfileDetails SET firstName='".$firstName."', middleName='".$middleName."', lastName='".$lastName."' WHERE userID = '".$userID."'");
+				
+				$result=$this->db->query("SELECT UB.userID,UB.userName,UB.password,UP.firstName FROM tbl_userBasicDetails UB INNER JOIN tbl_userProfileDetails UP ON UP.userID=UB.userID WHERE UB.userName='$userName' OR UP.primaryEmailID='$emailID'")->result_array();
+				if(count($result) > 0){
+					$pass=$this->decrypt_password($result[0]['password'],$password);
+					if($pass==$result[0]['password']){
+						$re=$this->db->query("SELECT gameID,entityID FROM tbl_unityGamePlayers WHERE userID = '".$result[0]['userID']."' AND status='P'")->result_array();				
+						if(count($re)>0){
+							$this->db->query("UPDATE tbl_userGameStatus SET status='completed' WHERE userID = '".$result[0]['userID']."' AND gameID = '".$re[0]['gameID']."' ");
+							echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID'];
+						}else{
+							echo "False";
+						}
+					}else{
+						echo "False";
+					}
+				}else{
+					echo "False";
+				}
+			}else{
+				echo "False";
+			}
+		}
+		
+		
 	}
 	/**
 	TO Android App Login
