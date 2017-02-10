@@ -28,7 +28,7 @@ class Home_model extends CI_Model {
 	Note : @ not allowed in url so replaced it to "attherate" 
 	**/
 	public function login(){
-		$entityID = '';
+		$entityID = '56014ff9-dbc9-11e6-972d-0401a55da801';
 		$userName=$_POST["userName"];
 		$nameArray = array();
 		$nameArray = explode(" ",trim($userName));
@@ -45,21 +45,22 @@ class Home_model extends CI_Model {
 				$middleName = $nameArray[$i];
 				$k++;
 			}
-			
 		}
 		if($firstName!=''){
-			$userCheck=$this->db->query("SELECT ubd.userID, ubd.profilepic, ubd.userName, upd.primaryEmailID, upd.password 
+			$userCheck=$this->db->query("SELECT ubd.userID, ubd.profilepic, ubd.userName, upd.primaryEmailID, ubd.password 
 											FROM tbl_userBasicDetails ubd 
 											INNER JOIN tbl_userProfileDetails upd ON ubd.userID=upd.userID
 											WHERE upd.firstName = '".$firstName."' ")->result_array();
+											//var_dump($userCheck);exit();
 			if(count($userCheck)>0){
-				return $userCheck;
+				echo json_encode($userCheck);
+				//return $userCheck;
 			}
 			else{
 				$getFreeUserID = $this->db->query("SELECT ubd.userID, ubd.userName, upd.primaryEmailID FROM tbl_userBasicDetails ubd 
 											INNER JOIN tbl_userProfileDetails upd ON ubd.userID=upd.userID
 											INNER JOIN tbl_userdepartmentmapping udm ON ubd.userID=udm.userID
-											WHERE udm.entityID='".$entityID."' AND upd.firstName = '' AND upd.lastName='' LIMIT 0,1")->result_array();
+											WHERE udm.entityID='".$entityID."' AND upd.firstName is null AND upd.lastName is null LIMIT 0,1")->result_array();
 				if(count($getFreeUserID)>0){
 					$userID = $getFreeUserID[0]['userID'];
 					$userName = $getFreeUserID[0]['userName'];
@@ -106,7 +107,7 @@ class Home_model extends CI_Model {
 						$this->db->query("UPDATE tbl_userGameStatus SET status='completed' WHERE userID = '".$result[0]['userID']."' AND gameID = '".$re[0]['gameID']."' ");
 						$gameInfo=$this->db->query("SELECT gameID,gameLevelID,playedOrNot FROM tbl_userEventCertificateInfo WHERE userID = '".$result[0]['userID']."' AND status='P'")->result_array();	
 						
-						echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID'];
+						echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID']."|".$re[0]['playedOrNot'];
 					}else{
 						echo "False";
 					}
@@ -118,7 +119,7 @@ class Home_model extends CI_Model {
 			}
 		}
 		if($type=='New'){
-			$entityID='';
+			$entityID='56014ff9-dbc9-11e6-972d-0401a55da801';
 			$userName=$_POST["userName"];
 			$nameArray = array();
 			$nameArray = explode(" ",trim($userName));
@@ -140,7 +141,7 @@ class Home_model extends CI_Model {
 			$getFreeUserID = $this->db->query("SELECT ubd.userID, ubd.userName, upd.primaryEmailID FROM tbl_userBasicDetails ubd 
 											INNER JOIN tbl_userProfileDetails upd ON ubd.userID=upd.userID
 											INNER JOIN tbl_userdepartmentmapping udm ON ubd.userID=udm.userID
-											WHERE udm.entityID='".$entityID."' AND upd.firstName = '' AND upd.lastName='' LIMIT 0,1")->result_array();
+											WHERE udm.entityID='".$entityID."' AND upd.firstName is null AND upd.lastName is null LIMIT 0,1")->result_array();
 			if(count($getFreeUserID)>0){	
 				$userID = $getFreeUserID[0]['userID'];
 				$userName = $getFreeUserID[0]['userName'];
