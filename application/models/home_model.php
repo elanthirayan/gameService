@@ -47,7 +47,7 @@ class Home_model extends CI_Model {
 			}
 		}
 		if($firstName!=''){
-			$userCheck=$this->db->query("SELECT ubd.userID, ubd.profilepic, ubd.userName, upd.primaryEmailID, ubd.password 
+			$userCheck=$this->db->query("SELECT ubd.userID, ubd.profilepic, ubd.userName, upd.primaryEmailID, ubd.password,upd.firstName 
 											FROM tbl_userBasicDetails ubd 
 											INNER JOIN tbl_userProfileDetails upd ON ubd.userID=upd.userID
 											WHERE upd.firstName = '".$firstName."' ")->result_array();
@@ -57,7 +57,7 @@ class Home_model extends CI_Model {
 				//return $userCheck;
 			}
 			else{
-				$getFreeUserID = $this->db->query("SELECT ubd.userID, ubd.userName, upd.primaryEmailID FROM tbl_userBasicDetails ubd 
+				$getFreeUserID = $this->db->query("SELECT ubd.userID, ubd.userName, upd.primaryEmailID,upd.firstName FROM tbl_userBasicDetails ubd 
 											INNER JOIN tbl_userProfileDetails upd ON ubd.userID=upd.userID
 											INNER JOIN tbl_userdepartmentmapping udm ON ubd.userID=udm.userID
 											WHERE udm.entityID='".$entityID."' AND upd.firstName is null AND upd.lastName is null LIMIT 0,1")->result_array();
@@ -98,16 +98,27 @@ class Home_model extends CI_Model {
 		if($type=='Existing'){
 			$userName=$_POST["userName"];
 			$password=$_POST["password"];
-			$result=$this->db->query("SELECT UB.userID,UB.userName,UB.password,UP.firstName FROM tbl_userBasicDetails UB INNER JOIN tbl_userProfileDetails UP ON UP.userID=UB.userID WHERE UB.userName='$userName' OR UP.primaryEmailID='$userName'")->result_array();
+			$result=$this->db->query("SELECT UB.userID,UB.userName,UB.password,UP.firstName,UB.profilepic FROM tbl_userBasicDetails UB INNER JOIN tbl_userProfileDetails UP ON UP.userID=UB.userID WHERE UB.userName='$userName' OR UP.primaryEmailID='$userName'")->result_array();
 			if(count($result) > 0){
 				$pass=$this->decrypt_password($result[0]['password'],$password);
 				if($pass==$result[0]['password']){
 					$re=$this->db->query("SELECT gameID,entityID FROM tbl_unityGamePlayers WHERE userID = '".$result[0]['userID']."' AND status='P'")->result_array();				
 					if(count($re)>0){
 						$this->db->query("UPDATE tbl_userGameStatus SET status='completed' WHERE userID = '".$result[0]['userID']."' AND gameID = '".$re[0]['gameID']."' ");
-						$gameInfo=$this->db->query("SELECT gameID,gameLevelID,playedOrNot FROM tbl_userEventCertificateInfo WHERE userID = '".$result[0]['userID']."' AND status='P'")->result_array();	
-						
-						echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID']."|".$re[0]['playedOrNot'];
+						$gameInfo=$this->db->query("SELECT gameID,gameLevelID,playedOrNot,certificateImg FROM tbl_userEventCertificateInfo WHERE userID = '".$result[0]['userID']."'")->result_array();	
+						$gp="";
+						$gc="";
+						$gl="";
+						if(isset($gameInfo[0]['playedOrNot'])){
+							$gp=$gameInfo[0]['playedOrNot'];
+						}
+						if(isset($gameInfo[0]['certificateImg'])){
+							$gc=$gameInfo[0]['certificateImg'];
+						}
+						if(isset($gameInfo[0]['gameLevelID'])){
+							$gl=$gameInfo[0]['gameLevelID'];
+						}
+						echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID']."|".$gp."|".$gc."|".$result[0]['profilepic']."|".$gl;
 					}else{
 						echo "False";
 					}
@@ -138,7 +149,7 @@ class Home_model extends CI_Model {
 				}
 			}
 			$password=$_POST["password"];
-			$getFreeUserID = $this->db->query("SELECT ubd.userID, ubd.userName, upd.primaryEmailID FROM tbl_userBasicDetails ubd 
+			$getFreeUserID = $this->db->query("SELECT ubd.userID, ubd.userName,upd.firstName, upd.primaryEmailID FROM tbl_userBasicDetails ubd 
 											INNER JOIN tbl_userProfileDetails upd ON ubd.userID=upd.userID
 											INNER JOIN tbl_userdepartmentmapping udm ON ubd.userID=udm.userID
 											WHERE udm.entityID='".$entityID."' AND upd.firstName is null AND upd.lastName is null LIMIT 0,1")->result_array();
@@ -155,7 +166,7 @@ class Home_model extends CI_Model {
 						$re=$this->db->query("SELECT gameID,entityID FROM tbl_unityGamePlayers WHERE userID = '".$result[0]['userID']."' AND status='P'")->result_array();				
 						if(count($re)>0){
 							$this->db->query("UPDATE tbl_userGameStatus SET status='completed' WHERE userID = '".$result[0]['userID']."' AND gameID = '".$re[0]['gameID']."' ");
-							echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID'];
+							echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID']."|0| | |";
 						}else{
 							echo "False";
 						}
@@ -169,7 +180,6 @@ class Home_model extends CI_Model {
 				echo "False";
 			}
 		}
-		
 		
 	}
 	/**
@@ -964,6 +974,18 @@ class Home_model extends CI_Model {
 				$this->db->query("INSERT INTO tbl_userEventCertificateInfo(id, userID, gameID, gameLevelID, certificateImg,
 									playedOrNot, updationDatetime) VALUES ('".$uid."', '".$userID."', '".$gameID."', '".$gameLevelID."', '".$certificateImg."', 1, now()) ");
 			}
+			/*UploAD IMG TO THE SERVER*/
+			$img = 'C:\wamp64\www\Events\certificates\\'.$certificateImg.'.png';
+			$this->load->library('ftp');
+			$config['hostname'] = '182.50.130.72';
+			$config['username'] = 'team007';
+			$config['password'] = 'BigNewThings6!';
+			$config['debug']        = TRUE;
+
+			$this->ftp->connect($config);
+			$this->ftp->upload($img, '/microlabs/'.$certificateImg.'.png', '');
+			$this->ftp->close();
+
 		}
 		if($type=='CertificatePrintedOrNot'){	
 			$this->db->query("UPDATE tbl_userEventCertificateInfo SET certificatePrintedOrNot=1, updationDatetime=now() 
@@ -978,6 +1000,15 @@ class Home_model extends CI_Model {
 		if($type=='FacebookShare'){	
 			$this->db->query("UPDATE tbl_userEventCertificateInfo SET facebookShare=1, updationDatetime=now()
 									WHERE userID='".$userID."' AND gameID='".$gameID."' AND gameLevelID = '".$gameLevelID."' ");
+			$imgQuery = $this->db->query("SELECT certificateImg FROM tbl_userEventCertificateInfo WHERE userID='".$userID."' AND gameID='".$gameID."' AND gameLevelID = '".$gameLevelID."' LIMIT 0,1")->result_array();
+			if(count($imgQuery)){
+				$img = 'http://axinovate.co/microlabs/'.$imgQuery[0]['certificateImg'].'.png';
+			}else{
+				$img = 'http://xucore.com/staging/assets/images/banners/merc-bg.jpg';
+			}
+			
+			$url = 'https://www.facebook.com/sharer.php?caption=Share&description=%20&title=%20&u=http://xucore.com/staging&picture='.$img;
+			return $url;			
 		}
 		return true;		
 	}
