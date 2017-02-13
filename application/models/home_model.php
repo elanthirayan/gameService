@@ -167,7 +167,7 @@ class Home_model extends CI_Model {
 						$re=$this->db->query("SELECT gameID,entityID FROM tbl_unityGamePlayers WHERE userID = '".$result[0]['userID']."' AND status='P'")->result_array();				
 						if(count($re)>0){
 							$this->db->query("UPDATE tbl_userGameStatus SET status='completed' WHERE userID = '".$result[0]['userID']."' AND gameID = '".$re[0]['gameID']."' ");
-							echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID']."|0| | ";
+							echo "True|".$result[0]['userID']."|".$result[0]['firstName']."|".$re[0]['gameID']."|".$re[0]['entityID']."|0| | |";
 						}else{
 							echo "False";
 						}
